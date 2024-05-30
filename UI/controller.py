@@ -1,43 +1,80 @@
 import flet as ft
+import os
+
+class View(ft.UserControl):
+    def __init__(self, page: ft.Page):
+        super().__init__()
+        # page stuff
+        self._page = page
+        self._page.title = "Template application using MVC and DAO"
+        self._page.horizontal_alignment = 'CENTER'
+        self._page.theme_mode = ft.ThemeMode.LIGHT
+        page.window_width = 1200  # window's width is 200 px
+        page.window_height = 800
+        page.window_center()
+        # controller (it is not initialized. Must be initialized in the main, after the controller is created)
+        self._controller = None
+        # graphical elements
+        self.lst_result = None
+        self._title = None
+        self._logo = None
+        self._ddStazArrivo = None
+        self._ddStazPartenza = None
+        self._btnCrea = None
+
+    def load_interface(self):
+        # title
+        self._title = ft.Text("Metro Paris", color="green", size=24)
+
+        # ROW with title
+        img_path = os.path.join(os.getcwd(), 'database/RATP.png')
+        self._logo = ft.Image(src=img_path,
+                              width=100,
+                              height=100,
+                              )
+
+        row1 = ft.Row([self._title, self._logo],
+                      alignment=ft.MainAxisAlignment.CENTER)
+
+        # Row with controls
+        self._btnCrea = ft.ElevatedButton(text="Crea Grafo", on_click=self._controller.handleCreaGrafoPesato)
+        self._ddStazPartenza = ft.Dropdown(label="Stazione di Partenza")
+        self._ddStazArrivo = ft.Dropdown(label="Stazione di Arrivo")
+        self._btnCalcola = ft.ElevatedButton(text="Calcola Raggiungibili",
+                                             on_click=self._controller.handleCercaRaggiungibili,
+                                             disabled = True)
+        self._btnCalcolaPercorso = ft.ElevatedButton(text="Calcola Percorso",
+                                                     on_click=self._controller.handlePercorso,
+                                                     disabled=True
+                                                     )
+
+        #Load elements in DD
+        self._controller.loadFermate(self._ddStazPartenza)
+        self._controller.loadFermate(self._ddStazArrivo)
 
 
-class Controller:
-    def __init__(self, view, model):
-        # the view, with the graphical elements of the UI
-        self._view = view
-        # the model, which implements the logic of the program and holds the data
-        self._model = model
+        row2 = ft.Row([self._btnCrea,
+                       self._ddStazPartenza,
+                       self._ddStazArrivo,
+                       self._btnCalcola,
+                       self._btnCalcolaPercorso
+                       ], alignment=ft.MainAxisAlignment.CENTER, spacing=30)
 
-    def handleCreaGrafo(self,e):
-        pass
+        # Row with listview
+        self.lst_result = ft.ListView(expand=1, spacing=10, padding=20, auto_scroll=False)
+        self._page.add(row1, row2, self.lst_result)
 
-    def handleCercaRaggiungibili(self,e):
-        pass
+        self._page.update()
 
-    def loadFermate(self, dd: ft.Dropdown()):
-        fermate = self._model.fermate
+    def set_controller(self, controller):
+        self._controller = controller
 
-        if dd.label == "Stazione di Partenza":
-            for f in fermate:
-                dd.options.append(ft.dropdown.Option(text=f.nome,
-                                                     data=f,
-                                                     on_click=self.read_DD_Partenza))
-        elif dd.label == "Stazione di Arrivo":
-            for f in fermate:
-                dd.options.append(ft.dropdown.Option(text=f.nome,
-                                                     data=f,
-                                                     on_click=self.read_DD_Arrivo))
+    def update_page(self):
+        self._page.update()
+    @property
+    def controller(self):
+        return self._controller
 
-    def read_DD_Partenza(self,e):
-        print("read_DD_Partenza called ")
-        if e.control.data is None:
-            self._fermataPartenza = None
-        else:
-            self._fermataPartenza = e.control.data
-
-    def read_DD_Arrivo(self,e):
-        print("read_DD_Arrivo called ")
-        if e.control.data is None:
-            self._fermataArrivo = None
-        else:
-            self._fermataArrivo = e.control.data
+    @controller.setter
+    def controller(self, controller):
+        self._controller = controller
